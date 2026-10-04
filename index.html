@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uganda Health Watch — National Health Intelligence (Prototype)</title>
+<meta name="description" content="Uganda Health Watch: AI-powered disease surveillance, early warning and health intelligence. Prototype by Sisiwenyewe Tech Uganda with simulated data.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07090D">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect width='30' height='10' fill='%23111'/%3E%3Crect y='10' width='30' height='10' fill='%23F5C518'/%3E%3Crect y='20' width='30' height='10' fill='%23D52B1E'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090D;--bg2:#0B0F14;--panel:#0E141B;--panel2:#121A23;--line:#1C2530;--line2:#263240;--line3:#3A4654;--text:#E9EDF2;--soft:#C2CCD6;--muted:#A3AFBB;--dim:#8794A1;--gold:#F5C518;--crit:#FF6B5B;--high:#FFA552;--watch:#7FB2FF;--ok:#6FE0A0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+button{font:inherit;color:inherit}
+a{color:var(--gold)}
+.mono{font-family:'IBM Plex Mono',monospace}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* shell */
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+.side{background:#090D12;border-right:1px solid var(--line);padding:20px 16px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:12px;align-items:center}
+.brand .mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#1B2A1F,#0F1A14);border:1px solid #284031;display:flex;align-items:center;justify-content:center}
+.brand b{display:block;font-family:'Archivo',sans-serif;font-weight:800;font-size:16px;letter-spacing:.01em;line-height:1.1}
+.brand small{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);letter-spacing:.14em}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:12px;background:none;border:0;border-radius:8px;padding:11px 12px;color:var(--muted);cursor:pointer;text-align:left;font-size:14px;min-height:44px}
+.nav button svg{width:18px;height:18px;flex:none}
+.nav button:hover{background:#111820;color:var(--text)}
+.nav button[aria-current="page"]{background:#15130A;color:var(--gold);box-shadow:inset 2px 0 0 var(--gold)}
+.nav .count{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;background:#2A1414;color:#FF9B8F;border-radius:99px;padding:1px 8px}
+.side-foot{margin-top:auto;font-size:12px;color:var(--dim);border-top:1px solid var(--line);padding-top:16px}
+.side-foot a{color:var(--muted);text-decoration:none}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:16px 28px;border-bottom:1px solid var(--line);background:rgba(7,9,13,.9);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
+.top h1{font-family:'Archivo',sans-serif;font-weight:700;font-size:20px;margin-right:auto}
+.top h1 span{color:var(--dim);font-weight:600}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;padding:6px 12px;border-radius:99px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.pill.sim{background:#1C1A0E;color:var(--gold)}
+.pill.live{background:#122A1E;color:var(--ok)}
+.pill.wk{border:1px solid var(--line2);color:var(--soft)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(111,224,160,.5)}70%{box-shadow:0 0 0 7px rgba(111,224,160,0)}100%{box-shadow:0 0 0 0 rgba(111,224,160,0)}}
+.view{padding:24px 28px 48px;display:none;animation:fade .5s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:18px;min-width:0}
+.card h3{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;color:var(--dim);font-weight:500;text-transform:uppercase;margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s5{grid-column:span 5}.s4{grid-column:span 4}.s6{grid-column:span 6}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:16px 18px}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi .v{font-family:'Archivo',sans-serif;font-weight:800;font-size:32px;line-height:1.1;margin-top:6px}
+.kpi .d{font-family:'IBM Plex Mono',monospace;font-size:11px;margin-top:4px;color:var(--dim)}
+.up{color:#FF9B8F}.down{color:var(--ok)}
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:none;border:1px solid var(--line3);border-radius:99px;padding:6px 14px;font-size:13px;color:var(--soft);cursor:pointer;min-height:34px}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#07090D;font-weight:600}
+/* map */
+.mapwrap{position:relative}
+#map{width:100%;height:auto;display:block;max-height:640px}
+#map path{stroke:#07090D;stroke-width:1.2;transition:fill .5s,opacity .3s;cursor:pointer}
+#map path:hover,#map path.sel{stroke:var(--text);stroke-width:2}
+.ring{fill:none;stroke-width:2;animation:ring 2.2s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+.maplabel{font-family:'IBM Plex Mono',monospace;font-size:13px;fill:var(--text);paint-order:stroke;stroke:#07090D;stroke-width:4px;pointer-events:none}
+.legend{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.legend .ramp{display:flex;height:10px;border-radius:3px;overflow:hidden;width:180px}
+.legend .ramp i{flex:1}
+.tip{position:fixed;z-index:50;pointer-events:none;background:#0B1016;border:1px solid var(--line3);border-radius:8px;padding:10px 12px;font-size:12px;min-width:170px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:none}
+.tip b{display:block;font-size:14px;margin-bottom:4px}
+.tip .r{display:flex;justify-content:space-between;gap:14px;color:var(--muted)}
+.tip .r strong{color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:500}
+.loading{display:flex;align-items:center;justify-content:center;height:420px;color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em}
+/* alerts */
+.alerts{display:flex;flex-direction:column;gap:10px}
+.alert{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;border:1px solid var(--line2);border-radius:10px;padding:12px 14px;background:#0B1117;cursor:pointer;text-align:left;width:100%}
+.alert:hover{border-color:var(--line3)}
+.sev{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;padding:4px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sev.critical{background:#2A1414;color:#FF9B8F}.sev.high{background:#2A1D10;color:#FFC48A}.sev.watch{background:#121C2A;color:#A9CBFF}
+.alert .t{font-weight:600;font-size:14px}
+.alert .m{font-size:12px;color:var(--muted)}
+.alert .n{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right}
+.alert .n small{display:block;color:var(--dim);font-size:10px}
+/* district panel */
+.dpanel{display:flex;flex-direction:column;gap:12px}
+.dpanel h4{font-family:'Archivo',sans-serif;font-size:24px;font-weight:800}
+.dpanel .reg{font-size:12px;color:var(--dim);font-family:'IBM Plex Mono',monospace;letter-spacing:.12em}
+.drow{display:grid;grid-template-columns:92px 1fr 64px;gap:10px;align-items:center;font-size:13px;color:var(--muted)}
+.drow strong{color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:500;text-align:right}
+/* charts */
+.chart{width:100%;display:block}
+.chart text{font-family:'IBM Plex Mono',monospace;font-size:11px;fill:#6E7B88}
+.axis line{stroke:#18212B}
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--dim);font-weight:500;padding:10px 12px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.tbl td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:hover td{background:#0D131A}
+.tbl .num{font-family:'IBM Plex Mono',monospace;text-align:right}
+.tblwrap{overflow-x:auto}
+.bar{height:8px;border-radius:4px;background:#1C2530;position:relative;min-width:120px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.status{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.status.new{background:#2A1414;color:#FF9B8F}.status.inv{background:#2A1D10;color:#FFC48A}.status.resp{background:#122A1E;color:var(--ok)}
+/* ask */
+.ask{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+.chat{display:flex;flex-direction:column;height:calc(100vh - 170px);min-height:520px}
+.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 4px 12px}
+.msg{max-width:86%;padding:12px 16px;border-radius:12px;font-size:14px;white-space:pre-line;line-height:1.6}
+.msg.u{align-self:flex-end;background:#1B2531}
+.msg.a{align-self:flex-start;background:var(--panel2);border:1px solid var(--line2)}
+.msg.a .lbl{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--gold);margin-bottom:6px}
+.typing::after{content:"▍";color:var(--gold);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.composer{display:flex;gap:10px;border-top:1px solid var(--line2);padding-top:14px}
+.composer input{flex:1;background:var(--bg);border:1px solid var(--line3);border-radius:8px;padding:12px 14px;color:var(--text);font:inherit;min-height:46px}
+.composer input:focus{border-color:var(--gold);outline:none}
+.btn{background:var(--gold);color:#07090D;border:0;border-radius:8px;padding:12px 18px;font-weight:600;cursor:pointer;min-height:46px}
+.btn.ghost{background:none;border:1px solid var(--line3);color:var(--text)}
+.sugg{display:flex;flex-direction:column;gap:8px}
+.sugg button{text-align:left;background:#0B1117;border:1px solid var(--line2);border-radius:10px;padding:12px 14px;cursor:pointer;font-size:13px;color:var(--soft);min-height:44px}
+.sugg button:hover{border-color:var(--gold);color:var(--text)}
+/* sitrep */
+.modal{position:fixed;inset:0;background:rgba(3,5,8,.75);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.modal.on{display:flex}
+.sitrep{background:#F7F5EE;color:#141413;max-width:820px;width:100%;border-radius:6px;padding:48px 56px;font-family:'IBM Plex Sans',sans-serif;box-shadow:0 40px 100px rgba(0,0,0,.6);position:relative}
+.sitrep .hdr{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #141413;padding-bottom:16px;margin-bottom:24px;flex-wrap:wrap}
+.sitrep h2{font-family:'Archivo',sans-serif;font-weight:800;font-size:28px}
+.sitrep .meta{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#555}
+.sitrep h5{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;margin:22px 0 8px;color:#8A6A12}
+.sitrep p,.sitrep li{font-size:14px;line-height:1.65}
+.sitrep table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.sitrep th,.sitrep td{border-bottom:1px solid #D8D4C8;padding:7px 8px;text-align:left}
+.sitrep .stampx{position:absolute;top:28px;right:40px;transform:rotate(8deg);border:2px solid #B3261E;color:#B3261E;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;padding:4px 10px;border-radius:4px}
+.sitrep .acts{display:flex;gap:10px;margin-top:28px;justify-content:flex-end}
+.sitrep .acts button{border:1px solid #141413;background:none;border-radius:6px;padding:10px 16px;cursor:pointer;color:#141413;min-height:44px}
+.sitrep .acts button.p{background:#141413;color:#F7F5EE}
+.note{font-size:12px;color:var(--dim);margin-top:10px}
+@media (max-width:1180px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.s8,.s7,.s5,.s4,.s6{grid-column:span 12}.ask{grid-template-columns:1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:sticky;top:0;height:auto;z-index:30;flex-direction:row;align-items:center;padding:10px 12px;gap:10px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .brand small,.side-foot,.nav .count{display:none}
+  .nav{flex-direction:row}
+  .nav button{padding:8px 10px;white-space:nowrap}
+  .nav button span.lbl{display:none}
+  .top{position:static;padding:14px 16px}
+  .view{padding:16px 16px 40px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chat{height:auto}
+  .msgs{max-height:60vh}
+  .sitrep{padding:32px 22px}
+}
+@media print{body{background:#fff}.app,.tip{display:none!important}.modal{position:static;display:block!important;padding:0;background:none}.sitrep{box-shadow:none;max-width:none}.sitrep .acts{display:none}}
+@media (prefers-reduced-motion:reduce){.ring,.dot{animation:none}.view{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6FE0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span>
+      <span><b>Uganda Health Watch</b><small>NATIONAL HEALTH INTELLIGENCE</small></span>
+    </div>
+    <nav class="nav" aria-label="Sections">
+      <button data-v="overview" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/></svg><span class="lbl">Overview</span></button>
+      <button data-v="warning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg><span class="lbl">Early warning</span><span class="count" id="navCount">0</span></button>
+      <button data-v="ask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span class="lbl">Ask Health Watch</span></button>
+      <button data-v="supply"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg><span class="lbl">Medicines &amp; supplies</span></button>
+    </nav>
+    <div class="side-foot">A prototype by <a href="https://sisiwenyewe.com">Sisiwenyewe Tech Uganda</a>.<br>All figures are simulated.</div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <h1 id="vtitle">National overview <span>· Ministry of Health</span></h1>
+      <span class="pill sim">DEMONSTRATION · SIMULATED DATA</span>
+      <span class="pill wk mono" id="wk">EPI WEEK --</span>
+      <span class="pill live"><span class="dot"></span><span id="clock">--:--</span></span>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section class="view on" id="v-overview" aria-label="National overview">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid">
+        <div class="card s7">
+          <h3><span>Risk map · districts</span><span id="mapNote" style="text-transform:none;letter-spacing:0">Hover or tap a district</span></h3>
+          <div class="chips" id="dchips" role="group" aria-label="Disease filter" style="margin-bottom:12px"></div>
+          <div class="mapwrap" id="mapwrap"><div class="loading" id="mapLoading">LOADING DISTRICT MAP…</div></div>
+          <div class="legend" aria-hidden="true"><span>Normal</span><span class="ramp" id="ramp"></span><span>Unusual rise</span><span style="margin-left:auto">Pulsing ring = active alert</span></div>
+        </div>
+        <div class="card s5">
+          <h3><span>Priority alerts</span><span class="mono" style="text-transform:none;letter-spacing:0">Ranked by AI risk score</span></h3>
+          <div class="alerts" id="alerts"></div>
+        </div>
+        <div class="card s8">
+          <h3><span id="trendTitle">National trend</span><span>Last 26 weeks</span></h3>
+          <svg class="chart" id="trend" viewBox="0 0 800 260" role="img" aria-label="Weekly cases trend"></svg>
+          <p class="note" id="trendNote"></p>
+        </div>
+        <div class="card s4">
+          <h3><span>District detail</span></h3>
+          <div class="dpanel" id="dpanel"><p class="note">Select a district on the map or an alert to see its picture.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EARLY WARNING -->
+    <section class="view" id="v-warning" aria-label="Early warning">
+      <div class="grid">
+        <div class="card s12">
+          <h3><span>Unusual rises detected this week</span><span style="text-transform:none;letter-spacing:0">Compared with each district's own recent baseline</span></h3>
+          <div class="tblwrap"><table class="tbl" id="anoms"></table></div>
+        </div>
+        <div class="card s7">
+          <h3><span>Malaria forecast · Northern Uganda</span><span>Next 4 weeks</span></h3>
+          <svg class="chart" id="fc" viewBox="0 0 800 280" role="img" aria-label="Malaria forecast for Northern Uganda"></svg>
+          <p class="note">Forecast combines recent case trends with the seasonal rainfall signal. Shaded band shows the likely range.</p>
+        </div>
+        <div class="card s5">
+          <h3><span>How detection works</span></h3>
+          <div class="alerts">
+            <div class="alert" style="cursor:default"><span class="sev watch">01</span><div><div class="t">Collect</div><div class="m">Weekly district reports, lab results, community and health-worker alerts in English, Luganda and Kiswahili.</div></div><span></span></div>
+            <div class="alert" style="cursor:default"><span class="sev watch">02</span><div><div class="t">Compare</div><div class="m">Each district is compared with its own normal for the season, so small but unusual rises stand out.</div></div><span></span></div>
+            <div class="alert" style="cursor:default"><span class="sev watch">03</span><div><div class="t">Rank and explain</div><div class="m">The AI scores risk, explains why, and drafts the briefing for the response team.</div></div><span></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASK -->
+    <section class="view" id="v-ask" aria-label="Ask Health Watch">
+      <div class="ask">
+        <div class="card chat">
+          <h3><span>Ask Health Watch</span><span style="color:var(--ok)">AI ANALYST · ONLINE</span></h3>
+          <div class="msgs" id="msgs" aria-live="polite"></div>
+          <form class="composer" id="askForm">
+            <label for="askIn" class="mono" style="position:absolute;left:-9999px">Your question</label>
+            <input id="askIn" autocomplete="off" placeholder="Ask about a district, a disease or medicines…">
+            <button class="btn" type="submit">Ask</button>
+          </form>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <h3><span>Try asking</span></h3>
+            <div class="sugg" id="sugg"></div>
+          </div>
+          <div class="card">
+            <h3><span>Weekly situation report</span></h3>
+            <p class="note" style="margin:0 0 14px">One click produces the report for the Minister and Permanent Secretary.</p>
+            <button class="btn" id="sitrepBtn" style="width:100%">Generate situation report</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPPLY -->
+    <section class="view" id="v-supply" aria-label="Medicines and supplies">
+      <div class="kpis" id="skpis" style="grid-template-columns:repeat(4,minmax(0,1fr))"></div>
+      <div class="grid">
+        <div class="card s12">
+          <h3><span>Facilities at risk of stock-out</span><span style="text-transform:none;letter-spacing:0">Days of stock left at current use</span></h3>
+          <div class="chips" id="schips" role="group" aria-label="Item filter" style="margin-bottom:14px"></div>
+          <div class="tblwrap"><table class="tbl" id="stock"></table></div>
+          <p class="note">Facility names are generic placeholders in this prototype.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="tip" id="tip" role="tooltip"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Weekly situation report"><div class="sitrep" id="sitrep"></div></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,c){return (c||document).querySelector(s);},$$=function(s,c){return Array.prototype.slice.call((c||document).querySelectorAll(s));};
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function el(tag,attrs,text){var e=document.createElement(tag);if(attrs)for(var k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;return e;}
+function svgEl(tag,attrs){var e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(var k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function fmt(n){return Math.round(n).toLocaleString('en-GB');}
+function expTxt(n){return n<1?'0 to 1':'about '+fmt(n);}
+
+/* ---------- time ---------- */
+function isoWeek(d){d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);var y=new Date(Date.UTC(d.getUTCFullYear(),0,1));return{w:Math.ceil(((d-y)/86400000+1)/7),y:d.getUTCFullYear()};}
+var now=new Date(),WK=isoWeek(new Date(now.getTime()-7*86400000));
+$('#wk').textContent='EPI WEEK '+WK.w+' · '+WK.y;
+function tickClock(){$('#clock').textContent=new Date().toTimeString().slice(0,5)+' EAT';}
+tickClock();setInterval(tickClock,30000);
+var weekLabels=[];for(var i=25;i>=0;i--){var w=WK.w-i;var y=WK.y;if(w<1){w+=52;y--;}weekLabels.push('W'+w);}
+
+/* ---------- seeded random ---------- */
+function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ---------- diseases & scenario (all simulated) ---------- */
+var D=[
+  {id:'all',name:'All diseases'},
+  {id:'malaria',name:'Malaria',base:780,unit:'cases'},
+  {id:'cholera',name:'Cholera',base:.25,unit:'suspected cases'},
+  {id:'measles',name:'Measles',base:.6,unit:'suspected cases'},
+  {id:'mpox',name:'Mpox',base:.35,unit:'confirmed cases'},
+  {id:'anthrax',name:'Anthrax',base:.05,unit:'suspected cases'}
+];
+var SCN={
+  'Kasese|cholera':[0,0,3,9,19,34],
+  'Bundibugyo|cholera':[0,0,0,1,3,6],
+  'Isingiro|measles':[0,1,3,6,10,15],
+  'Ibanda|anthrax':[0,0,0,0,2,5],
+  'Kampala|mpox':[4,5,5,7,9,12],
+  'Wakiso|mpox':[3,3,4,5,7,9]
+};
+var MALARIA_N={Lamwo:1,Kitgum:1,Agago:1,Pader:1,Amuru:1,Gulu:.6,Nwoya:.5};
+var MAL_MULT=[1,1.05,1.15,1.32,1.55,1.82];
+
+var districts=[],byName={},alerts=[],curDisease='all',selected=null;
+
+function buildData(){
+  districts.forEach(function(d){
+    var r=rng(hash(d.name));
+    d.pop=d.name==='Kampala'?3.2:d.name==='Wakiso'?2.8:.55+r()*1.3;
+    d.series={};
+    D.slice(1).forEach(function(dz){
+      var s=[],r2=rng(hash(d.name+dz.id));
+      var regionMal=dz.id==='malaria'?(d.region==='Northern'?1.5:d.region==='Eastern'?1.2:d.region==='Central'?.7:.8):1;
+      for(var i=0;i<26;i++){
+        var season=dz.id==='malaria'?1+.22*Math.sin((i+6)/26*Math.PI*2):1;
+        var mean=dz.base*d.pop*regionMal*season;
+        var v=dz.base<1?(r2()<mean?Math.round(r2()*2+ (r2()<.5?0:1)):0):mean*(.88+r2()*.24);
+        s.push(Math.max(0,v));
+      }
+      var key=d.name+'|'+dz.id;
+      if(SCN[key]){for(var k=0;k<6;k++)s[20+k]=SCN[key][k];}
+      if(dz.id==='malaria'&&MALARIA_N[d.name]){for(var k2=0;k2<6;k2++)s[20+k2]=s[20+k2]*(1+(MAL_MULT[k2]-1)*MALARIA_N[d.name]);}
+      d.series[dz.id]=s.map(function(v){return Math.round(v);});
+    });
+    d.anom={};
+    D.slice(1).forEach(function(dz){
+      var s=d.series[dz.id],base=s.slice(12,22),m=base.reduce(function(a,b){return a+b;},0)/base.length;
+      var sd=Math.sqrt(base.reduce(function(a,b){return a+(b-m)*(b-m);},0)/base.length);
+      var cur=s[25],floor=dz.id==='malaria'?Math.max(sd,m*.12):Math.max(sd,1.5);
+      var z=(cur-m)/floor,excess=m>0?(cur-m)/m*100:(cur>0?999:0);
+      d.anom[dz.id]={cur:cur,exp:m,z:z,excess:excess,prev:s[24]};
+    });
+    d.risk={};var mx=0;
+    D.slice(1).forEach(function(dz){var a=d.anom[dz.id];var score=Math.max(0,Math.min(1,(a.z-1)/(dz.id==='malaria'?9:6)));if(dz.id!=='malaria'&&a.cur<3)score=Math.min(score,.15);if(dz.id==='anthrax'&&a.cur>=2)score=Math.max(score,.9);d.risk[dz.id]=score;mx=Math.max(mx,score);});
+    d.risk.all=mx;
+  });
+  alerts=[];
+  districts.forEach(function(d){D.slice(1).forEach(function(dz){var a=d.anom[dz.id],sc=d.risk[dz.id];if(sc>=.45&&(dz.id==='malaria'||a.cur>=4)){
+    var sev=(dz.id==='cholera'||dz.id==='anthrax')&&a.cur>=5?'critical':sc>=.7?'high':'watch';
+    if(dz.id==='malaria'&&sc>=.6)sev='high';
+    alerts.push({d:d,dz:dz,a:a,score:sc+(sev==='critical'?2:sev==='high'?1:0),sev:sev});}});});
+  alerts.sort(function(x,y){return y.score-x.score;});
+  var stat=['new','inv','resp'];alerts.forEach(function(al,i){al.status=al.sev==='critical'?(i===0?'resp':'inv'):stat[i%3];});
+}
+
+/* ---------- map ---------- */
+var MAP_URL='https://cdn.jsdelivr.net/npm/@react-map/uganda@1.0.9/src/constants.ts';
+var RAMP=['#18212B','#2E2A17','#4E4114','#7A6112','#B08712','#F5C518','#FFE27A'];
+function rampColor(v){v=Math.max(0,Math.min(1,v));var i=Math.min(RAMP.length-1,Math.round(v*(RAMP.length-1)));return RAMP[i];}
+RAMP.forEach(function(c){var i=el('i');i.style.background=c;$('#ramp').appendChild(i);});
+var svg,paths={};
+function region(cx,cy){if(cy<330)return'Northern';if(cx<330)return'Western';if(cx>520)return'Eastern';return'Central';}
+function loadMap(){
+  return fetch(MAP_URL).then(function(r){if(!r.ok)throw new Error('map');return r.text();}).then(function(txt){
+    var blk=txt.slice(txt.indexOf('export const drawPath'));
+    var re=/\n\s+'?([A-Za-z \-]+)'?:\s*\n?\s*'(M[^']+)'/g,m;
+    svg=svgEl('svg',{id:'map',viewBox:'0 0 800 835',role:'img','aria-label':'Map of Uganda districts coloured by disease risk'});
+    var gP=svgEl('g',{}),gR=svgEl('g',{'pointer-events':'none'}),gL=svgEl('g',{'pointer-events':'none'});
+    svg.appendChild(gP);svg.appendChild(gR);svg.appendChild(gL);
+    $('#mapLoading').remove();$('#mapwrap').appendChild(svg);
+    while((m=re.exec(blk))){
+      var name=m[1].trim();if(name==='Kibale')name='Kibaale';
+      var p=svgEl('path',{d:m[2],tabindex:'0','aria-label':name});
+      gP.appendChild(p);var bb=p.getBBox();
+      var d={name:name,cx:bb.x+bb.width/2,cy:bb.y+bb.height/2,path:p};
+      d.region=region(d.cx,d.cy);districts.push(d);byName[name.toLowerCase()]=d;paths[name]=p;
+      (function(d){
+        p.addEventListener('pointermove',function(e){showTip(e,d);});
+        p.addEventListener('pointerleave',hideTip);
+        p.addEventListener('focus',function(){var r=p.getBoundingClientRect();showTip({clientX:r.left+r.width/2,clientY:r.top},d);});
+        p.addEventListener('blur',hideTip);
+        p.addEventListener('click',function(){selectDistrict(d);});
+        p.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();selectDistrict(d);}});
+      })(d);
+    }
+    svg._rings=gR;svg._labels=gL;
+  });
+}
+function paintMap(){
+  if(!svg)return;
+  districts.forEach(function(d){d.path.style.fill=rampColor(d.risk[curDisease]);});
+  var gR=svg._rings,gL=svg._labels;gR.innerHTML='';gL.innerHTML='';
+  var shown={};
+  alerts.filter(function(a){return curDisease==='all'||a.dz.id===curDisease;}).forEach(function(a,i){
+    if(shown[a.d.name])return;shown[a.d.name]=1;
+    var col=a.sev==='critical'?'#FF6B5B':a.sev==='high'?'#FFA552':'#7FB2FF';
+    var c=svgEl('circle',{cx:a.d.cx,cy:a.d.cy,r:18,class:'ring',stroke:col});if(!reduce)c.style.animationDelay=(i*.3)+'s';gR.appendChild(c);
+    gR.appendChild(svgEl('circle',{cx:a.d.cx,cy:a.d.cy,r:5,fill:col}));
+    if(i<5){var t=svgEl('text',{x:a.d.cx+12,y:a.d.cy-10,class:'maplabel'});t.textContent=a.d.name+' · '+a.dz.name;gL.appendChild(t);}
+  });
+}
+var tip=$('#tip');
+function showTip(e,d){
+  tip.innerHTML='';tip.appendChild(el('b',null,d.name));
+  var reg=el('div',{class:'r'});reg.appendChild(el('span',null,d.region+' region'));tip.appendChild(reg);
+  var list=curDisease==='all'?D.slice(1):[D.filter(function(x){return x.id===curDisease;})[0]];
+  list.forEach(function(dz){var a=d.anom[dz.id];var r=el('div',{class:'r'});r.appendChild(el('span',null,dz.name));
+    var s=el('strong',null,fmt(a.cur)+(a.excess>25&&a.cur>=3?'  ▲'+(a.excess>500?'>500':Math.round(a.excess))+'%':''));r.appendChild(s);tip.appendChild(r);});
+  tip.style.display='block';
+  var x=Math.min(window.innerWidth-tip.offsetWidth-12,e.clientX+14),y=Math.min(window.innerHeight-tip.offsetHeight-12,e.clientY+14);
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function hideTip(){tip.style.display='none';}
+
+/* ---------- charts ---------- */
+function lineChart(svgNode,series,opts){
+  var W=800,H=+svgNode.getAttribute('viewBox').split(' ')[3],L=56,R=16,T=16,B=30;
+  svgNode.innerHTML='';
+  var all=[];series.forEach(function(s){s.values.forEach(function(v){if(v!=null)all.push(v);});if(s.band)s.band.forEach(function(b){if(b)all.push(b[1]);});});
+  var max=Math.max.apply(null,all.concat([1]))*1.12,n=opts.labels.length;
+  function X(i){return L+(W-L-R)*i/(n-1);}function Y(v){return T+(H-T-B)*(1-v/max);}
+  var ax=svgEl('g',{class:'axis'});svgNode.appendChild(ax);
+  for(var g=0;g<=4;g++){var v=max*g/4,y=Y(v);ax.appendChild(svgEl('line',{x1:L,x2:W-R,y1:y,y2:y}));var t=svgEl('text',{x:L-8,y:y+4,'text-anchor':'end'});t.textContent=v>=1000?(v/1000).toFixed(1)+'k':Math.round(v);svgNode.appendChild(t);}
+  opts.labels.forEach(function(l,i){if(i%opts.every===0||i===n-1){var t=svgEl('text',{x:X(i),y:H-8,'text-anchor':'middle'});t.textContent=l;svgNode.appendChild(t);}});
+  if(opts.threshold!=null){var ty=Y(opts.threshold);svgNode.appendChild(svgEl('line',{x1:L,x2:W-R,y1:ty,y2:ty,stroke:'#FF6B5B','stroke-dasharray':'4 5','stroke-width':1.5,opacity:.8}));var tt=svgEl('text',{x:W-R,y:ty-6,'text-anchor':'end'});tt.style.fill='#FF9B8F';tt.textContent='Alert threshold';svgNode.appendChild(tt);}
+  if(opts.splitAt!=null){var sx=X(opts.splitAt);svgNode.appendChild(svgEl('line',{x1:sx,x2:sx,y1:T,y2:H-B,stroke:'#3A4654','stroke-dasharray':'2 4'}));var st=svgEl('text',{x:sx+6,y:T+10});st.textContent='FORECAST →';svgNode.appendChild(st);}
+  series.forEach(function(s){
+    if(s.band){var top='',bot='';s.band.forEach(function(b,i){if(!b)return;top+=(top?'L':'M')+X(i)+','+Y(b[1]);});for(var i=s.band.length-1;i>=0;i--){var b=s.band[i];if(b)bot+='L'+X(i)+','+Y(b[0]);}svgNode.appendChild(svgEl('path',{d:top+bot+'Z',fill:s.color,opacity:.14}));}
+    if(s.area){var a='',first=null,last=null;s.values.forEach(function(v,i){if(v==null)return;if(first===null)first=i;last=i;a+=(a?'L':'M')+X(i)+','+Y(v);});
+      var gid='g'+Math.random().toString(36).slice(2);var defs=svgEl('defs',{}),lg=svgEl('linearGradient',{id:gid,x1:0,x2:0,y1:0,y2:1});lg.appendChild(svgEl('stop',{offset:0,'stop-color':s.color,'stop-opacity':.3}));lg.appendChild(svgEl('stop',{offset:1,'stop-color':s.color,'stop-opacity':0}));defs.appendChild(lg);svgNode.appendChild(defs);
+      svgNode.appendChild(svgEl('path',{d:a+'L'+X(last)+','+Y(0)+'L'+X(first)+','+Y(0)+'Z',fill:'url(#'+gid+')'}));}
+    var d='';s.values.forEach(function(v,i){if(v==null)return;d+=(d?'L':'M')+X(i)+','+Y(v);});
+    var p=svgEl('path',{d:d,fill:'none',stroke:s.color,'stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'});if(s.dash)p.setAttribute('stroke-dasharray','6 5');svgNode.appendChild(p);
+    if(!reduce&&!s.dash){var len=p.getTotalLength();p.style.strokeDasharray=len;p.style.strokeDashoffset=len;p.getBoundingClientRect();p.style.transition='stroke-dashoffset 1.4s ease';p.style.strokeDashoffset=0;}
+    var li=s.values.length-1;while(li>=0&&s.values[li]==null)li--;
+    if(li>=0)svgNode.appendChild(svgEl('circle',{cx:X(li),cy:Y(s.values[li]),r:4.5,fill:s.color,stroke:'#0E141B','stroke-width':2}));
+  });
+  var cross=svgEl('line',{y1:T,y2:H-B,stroke:'#A3AFBB','stroke-width':1,opacity:0});svgNode.appendChild(cross);
+  var hit=svgEl('rect',{x:L,y:T,width:W-L-R,height:H-T-B,fill:'transparent'});svgNode.appendChild(hit);
+  hit.addEventListener('pointermove',function(e){var r=svgNode.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W,i=Math.max(0,Math.min(n-1,Math.round((px-L)/(W-L-R)*(n-1))));
+    cross.setAttribute('x1',X(i));cross.setAttribute('x2',X(i));cross.setAttribute('opacity',.5);
+    tip.innerHTML='';tip.appendChild(el('b',null,opts.labels[i]));
+    series.forEach(function(s){var v=s.values[i];if(v==null)return;var row=el('div',{class:'r'});row.appendChild(el('span',null,s.name));row.appendChild(el('strong',null,fmt(v)));tip.appendChild(row);});
+    tip.style.display='block';tip.style.left=Math.min(innerWidth-tip.offsetWidth-12,e.clientX+14)+'px';tip.style.top=(e.clientY+14)+'px';});
+  hit.addEventListener('pointerleave',function(){cross.setAttribute('opacity',0);hideTip();});
+}
+function spark(values,color){var w=110,h=28,max=Math.max.apply(null,values.concat([1])),s=svgEl('svg',{viewBox:'0 0 '+w+' '+h,width:w,height:h,'aria-hidden':'true'});var d='';values.forEach(function(v,i){d+=(i?'L':'M')+(i/(values.length-1)*(w-4)+2)+','+(h-3-(v/max)*(h-6));});s.appendChild(svgEl('path',{d:d,fill:'none',stroke:color,'stroke-width':1.6,'stroke-linejoin':'round'}));return s;}
+
+/* ---------- overview ---------- */
+function national(id){var out=new Array(26).fill(0);districts.forEach(function(d){d.series[id].forEach(function(v,i){out[i]+=v;});});return out;}
+function renderKpis(){
+  var k=$('#kpis');k.innerHTML='';
+  var mal=national('malaria'),chg=(mal[25]-mal[24])/mal[24]*100;
+  var crit=alerts.filter(function(a){return a.sev==='critical';}).length;
+  var watchD={};alerts.forEach(function(a){watchD[a.d.name]=1;});
+  var items=[
+    ['Active alerts',alerts.length,crit+' critical','up'],
+    ['Districts on watch',Object.keys(watchD).length,'of '+districts.length+' districts',''],
+    ['Malaria cases this week',fmt(mal[25]),(chg>=0?'▲ ':'▼ ')+Math.abs(chg).toFixed(1)+'% vs last week',chg>=0?'up':'down'],
+    ['Reporting completeness','91%','▲ 2 pts vs last week','down'],
+    ['Facilities with stock-outs',stock.filter(function(s){return s.days===0;}).length,stock.filter(function(s){return s.days>0&&s.days<=7;}).length+' more under 7 days','up']
+  ];
+  items.forEach(function(it){var c=el('div',{class:'kpi'});c.appendChild(el('div',{class:'l'},it[0]));c.appendChild(el('div',{class:'v'},String(it[1])));c.appendChild(el('div',{class:'d '+it[3]},it[2]));k.appendChild(c);});
+  $('#navCount').textContent=alerts.length;
+}
+function renderChips(){
+  var c=$('#dchips');c.innerHTML='';
+  D.forEach(function(dz){var b=el('button',{class:'chip','aria-pressed':dz.id===curDisease?'true':'false'},dz.name);b.addEventListener('click',function(){curDisease=dz.id;renderChips();paintMap();renderTrend();renderAlerts();});c.appendChild(b);});
+}
+function renderAlerts(){
+  var box=$('#alerts');box.innerHTML='';
+  alerts.filter(function(a){return curDisease==='all'||a.dz.id===curDisease;}).slice(0,6).forEach(function(a){
+    var b=el('button',{class:'alert',type:'button'});
+    var sev=el('span',{class:'sev '+a.sev},(a.sev==='critical'?'● ':a.sev==='high'?'▲ ':'◆ ')+a.sev.toUpperCase());
+    var mid=el('div');mid.appendChild(el('div',{class:'t'},a.dz.name+' · '+a.d.name));
+    mid.appendChild(el('div',{class:'m'},a.d.region+' region · normally '+expTxt(a.a.exp)+' a week, now '+fmt(a.a.cur)));
+    var n=el('div',{class:'n'},fmt(a.a.cur));n.appendChild(el('small',null,'THIS WEEK'));
+    b.appendChild(sev);b.appendChild(mid);b.appendChild(n);
+    b.addEventListener('click',function(){curDisease=a.dz.id;renderChips();paintMap();renderTrend();selectDistrict(a.d);});
+    box.appendChild(b);
+  });
+  if(!box.children.length)box.appendChild(el('p',{class:'note'},'No active alerts for this disease.'));
+}
+function renderTrend(){
+  var id=curDisease==='all'?'malaria':curDisease,dz=D.filter(function(x){return x.id===id;})[0];
+  var src=selected?selected.series[id]:national(id),who=selected?selected.name:'National';
+  $('#trendTitle').textContent=who+' · '+dz.name+' · weekly '+dz.unit;
+  var base=src.slice(12,22),m=base.reduce(function(a,b){return a+b;},0)/base.length;
+  lineChart($('#trend'),[{name:dz.name,values:src,color:'#F5C518',area:true}],{labels:weekLabels,every:4,threshold:id==='malaria'?m*1.25:Math.max(3,m*2+2)});
+  $('#trendNote').textContent=curDisease==='all'?'Showing malaria, the largest burden. Choose a disease above to switch.':'';
+}
+function selectDistrict(d){
+  if(selected&&selected.path)selected.path.classList.remove('sel');selected=d;d.path.classList.add('sel');
+  var p=$('#dpanel');p.innerHTML='';
+  p.appendChild(el('div',{class:'reg'},d.region.toUpperCase()+' REGION'));p.appendChild(el('h4',null,d.name));
+  D.slice(1).forEach(function(dz){var a=d.anom[dz.id];var r=el('div',{class:'drow'});r.appendChild(el('span',null,dz.name));
+    r.appendChild(spark(d.series[dz.id].slice(-12),d.risk[dz.id]>=.35?'#FF9B8F':'#6E7B88'));r.appendChild(el('strong',null,fmt(a.cur)));p.appendChild(r);});
+  var my=alerts.filter(function(a){return a.d===d;});
+  p.appendChild(el('p',{class:'note'},my.length?my.length+' active alert'+(my.length>1?'s':'')+': '+my.map(function(a){return a.dz.name;}).join(', ')+'.':'No active alerts. All indicators within normal range.'));
+  var ask=el('button',{class:'btn ghost',type:'button'},'Ask Health Watch about '+d.name);ask.addEventListener('click',function(){go('ask');askQ("What's happening in "+d.name+' this week?');});p.appendChild(ask);
+  renderTrend();
+}
+
+/* ---------- early warning ---------- */
+function renderAnoms(){
+  var t=$('#anoms');t.innerHTML='';
+  var h=el('tr');['SEVERITY','DISTRICT','DISEASE','THIS WEEK','NORMAL','CHANGE','LAST 12 WEEKS','STATUS'].forEach(function(x,i){h.appendChild(el('th',i>=3&&i<=5?{class:'num'}:null,x));});t.appendChild(h);
+  alerts.forEach(function(a){var r=el('tr');
+    var s=el('td');s.appendChild(el('span',{class:'sev '+a.sev},(a.sev==='critical'?'● ':a.sev==='high'?'▲ ':'◆ ')+a.sev.toUpperCase()));r.appendChild(s);
+    r.appendChild(el('td',null,a.d.name+' · '+a.d.region));r.appendChild(el('td',null,a.dz.name));
+    r.appendChild(el('td',{class:'num'},fmt(a.a.cur)));r.appendChild(el('td',{class:'num'},a.a.exp<1?'0–1':fmt(a.a.exp)));
+    r.appendChild(el('td',{class:'num up'},a.a.excess>500?'> +500%':'+'+Math.round(a.a.excess)+'%'));
+    var sp=el('td');sp.appendChild(spark(a.d.series[a.dz.id].slice(-12),a.sev==='critical'?'#FF9B8F':a.sev==='high'?'#FFC48A':'#A9CBFF'));r.appendChild(sp);
+    var stt=el('td');stt.appendChild(el('span',{class:'status '+a.status},a.status==='new'?'NEW':a.status==='inv'?'INVESTIGATING':'RESPONSE ACTIVE'));r.appendChild(stt);
+    t.appendChild(r);});
+}
+var fcData;
+function renderForecast(){
+  var north=new Array(26).fill(0);districts.forEach(function(d){if(d.region==='Northern')d.series.malaria.forEach(function(v,i){north[i]+=v;});});
+  var hist=north.slice(-14),last=hist[hist.length-1],g=[1.1,1.17,1.2,1.18],f=g.map(function(x){return last*x;});
+  var labels=weekLabels.slice(-14);for(var i=1;i<=4;i++){var w=WK.w+i;labels.push('W'+(w>52?w-52:w));}
+  var hv=hist.concat([null,null,null,null]),fv=hist.map(function(_,i){return i===hist.length-1?last:null;}).concat(f);
+  var band=hist.map(function(_,i){return i===hist.length-1?[last,last]:null;}).concat(f.map(function(v,i){var w=.08+i*.05;return[v*(1-w),v*(1+w)];}));
+  fcData={last:last,peak:Math.max.apply(null,f),pct:Math.round((Math.max.apply(null,f)/last-1)*100)};
+  lineChart($('#fc'),[{name:'Reported',values:hv,color:'#F5C518',area:true},{name:'Forecast',values:fv,color:'#FFA552',dash:true,band:band}],{labels:labels,every:3,splitAt:13});
+}
+
+/* ---------- supplies (simulated) ---------- */
+var ITEMS=['All items','ACTs (malaria treatment)','Malaria rapid tests','ORS sachets',"Ringer's lactate",'Measles vaccine','Cholera rapid tests'];
+var stock=[],curItem='All items';
+function buildStock(){
+  var plan=[['Kasese','HC IV (A)',"Ringer's lactate",0],['Kasese','Hospital (A)','ORS sachets',3],['Kasese','HC III (B)','Cholera rapid tests',2],['Bundibugyo','HC IV (A)','ORS sachets',6],
+    ['Lamwo','HC III (A)','ACTs (malaria treatment)',0],['Lamwo','HC IV (A)','Malaria rapid tests',4],['Kitgum','Hospital (A)','ACTs (malaria treatment)',5],['Agago','HC III (C)','Malaria rapid tests',0],['Pader','HC III (A)','ACTs (malaria treatment)',7],['Amuru','HC II (B)','ACTs (malaria treatment)',9],
+    ['Isingiro','HC IV (A)','Measles vaccine',0],['Isingiro','HC III (B)','Measles vaccine',5],['Ibanda','Hospital (A)',"Ringer's lactate",11],['Gulu','Regional referral','Malaria rapid tests',12],['Moroto','HC III (A)','ORS sachets',13],['Arua','HC IV (B)','ACTs (malaria treatment)',16],['Mbale','HC IV (A)','Measles vaccine',18],['Hoima','HC III (B)','ORS sachets',21]];
+  stock=plan.map(function(p){return{district:p[0],facility:p[0]+' · '+p[1],item:p[2],days:p[3]};});
+}
+function renderSupply(){
+  var k=$('#skpis');k.innerHTML='';
+  var out=stock.filter(function(s){return s.days===0;}),low=stock.filter(function(s){return s.days>0&&s.days<=7;});
+  [['Stock-outs now',out.length,'facilities with zero stock'],['Under 7 days',low.length,'reorder urgently'],['Linked to alerts',stock.filter(function(s){return alerts.some(function(a){return a.d.name===s.district;});}).length,'facilities in alert districts'],['Orders suggested',out.length+low.length,'ready for the national medical stores']].forEach(function(it){var c=el('div',{class:'kpi'});c.appendChild(el('div',{class:'l'},it[0]));c.appendChild(el('div',{class:'v'},String(it[1])));c.appendChild(el('div',{class:'d'},it[2]));k.appendChild(c);});
+  var c=$('#schips');c.innerHTML='';ITEMS.forEach(function(it){var b=el('button',{class:'chip','aria-pressed':it===curItem?'true':'false'},it);b.addEventListener('click',function(){curItem=it;renderSupply();});c.appendChild(b);});
+  var t=$('#stock');t.innerHTML='';var h=el('tr');['FACILITY','ITEM','DAYS LEFT','','STATUS','LINKED ALERT'].forEach(function(x,i){h.appendChild(el('th',i===2?{class:'num'}:null,x));});t.appendChild(h);
+  stock.filter(function(s){return curItem==='All items'||s.item===curItem;}).sort(function(a,b){return a.days-b.days;}).forEach(function(s){var r=el('tr');
+    r.appendChild(el('td',null,s.facility));r.appendChild(el('td',null,s.item));r.appendChild(el('td',{class:'num'},String(s.days)));
+    var bt=el('td'),bar=el('div',{class:'bar'}),fill=el('i');fill.style.width=Math.max(3,Math.min(100,s.days/30*100))+'%';fill.style.background=s.days===0?'#FF6B5B':s.days<=7?'#FFA552':'#6FE0A0';bar.appendChild(fill);bt.appendChild(bar);r.appendChild(bt);
+    var st=el('td');st.appendChild(el('span',{class:'status '+(s.days===0?'new':s.days<=7?'inv':'resp')},s.days===0?'STOCK-OUT':s.days<=7?'CRITICAL LOW':'MONITOR'));r.appendChild(st);
+    var al=alerts.filter(function(a){return a.d.name===s.district;})[0];r.appendChild(el('td',null,al?al.dz.name+' alert':'—'));
+    t.appendChild(r);});
+}
+
+/* ---------- Ask Health Watch (simulated analyst) ---------- */
+var SUGG=["What's happening in Kasese this week?","Which districts need attention right now?","What is the malaria outlook for the North?","Where are we running out of medicines?"];
+SUGG.forEach(function(q){var b=el('button',{type:'button'},q);b.addEventListener('click',function(){askQ(q);});$('#sugg').appendChild(b);});
+function districtAnswer(d){
+  var my=alerts.filter(function(a){return a.d===d;}),lines=[d.name.toUpperCase()+' · '+d.region.toUpperCase()+' REGION · EPI WEEK '+WK.w];
+  if(!my.length){lines.push('','All monitored diseases are within the normal range for this time of year. Malaria: '+fmt(d.anom.malaria.cur)+' cases this week (expected about '+fmt(d.anom.malaria.exp)+').','','No action needed beyond routine surveillance.');return lines.join('\n');}
+  lines.push('');my.forEach(function(a){lines.push('• '+a.dz.name+': '+fmt(a.a.cur)+' '+a.dz.unit+' this week, against '+expTxt(a.a.exp)+' normally. Rising for '+(a.d.series[a.dz.id].slice(-4).filter(function(v,i,arr){return i>0&&v>arr[i-1];}).length)+' consecutive weeks. Severity: '+a.sev+'.');});
+  var sup=stock.filter(function(s){return s.district===d.name&&s.days<=7;});
+  if(sup.length){lines.push('','Supplies: '+sup.map(function(s){return s.item+' at '+s.facility+(s.days===0?' is out of stock':' has '+s.days+' days left');}).join('; ')+'.');}
+  var top=my[0];lines.push('','RECOMMENDED ACTIONS');
+  if(top.dz.id==='cholera')lines.push('1. Deploy the district rapid response team and set up a cholera treatment unit.','2. Test and chlorinate water sources around affected villages.','3. Prioritise ORS and IV fluid resupply to the facilities listed above.','4. Community messaging on safe water and handwashing, in local languages.');
+  else if(top.dz.id==='measles')lines.push('1. Confirm cases through laboratory testing.','2. Plan a ring vaccination campaign around affected sub-counties.','3. Resupply measles vaccine to facilities at zero stock.');
+  else if(top.dz.id==='anthrax')lines.push('1. Joint One Health investigation with district veterinary officers.','2. Stop slaughter and sale of meat from sick or dead animals.','3. Treat exposed people and vaccinate livestock in the area.');
+  else if(top.dz.id==='mpox')lines.push('1. Expand contact tracing and testing in affected divisions.','2. Isolation support for confirmed cases.','3. Targeted awareness through health facilities and community leaders.');
+  else lines.push('1. Ensure ACTs and rapid tests are in stock at all facilities.','2. Intensify community case management by village health teams.','3. Review vector control coverage, such as bed nets and spraying.');
+  return lines.join('\n');
+}
+function answer(q){
+  var s=q.toLowerCase(),d=null;
+  Object.keys(byName).forEach(function(n){if(s.indexOf(n)>=0&&(!d||n.length>d.name.length))d=byName[n];});
+  if(d)return districtAnswer(d);
+  if(/attention|alert|priorit|worst|now|urgent/.test(s)){var l=['PRIORITY DISTRICTS · EPI WEEK '+WK.w,''];alerts.slice(0,6).forEach(function(a,i){l.push((i+1)+'. '+a.d.name+' — '+a.dz.name+' ('+a.sev+'): '+fmt(a.a.cur)+' this week vs '+expTxt(a.a.exp)+' normally.');});l.push('','The '+alerts.filter(function(a){return a.sev==='critical';}).length+' critical signals need a response team within 24 hours. Ask me about any district for detail.');return l.join('\n');}
+  if(/malaria|north|forecast|outlook/.test(s)){return['MALARIA OUTLOOK · NORTHERN REGION','','Cases have risen for four straight weeks, driven by Lamwo, Kitgum, Agago, Pader and Amuru, following above-normal rainfall.','','Forecast: a further rise of about '+fcData.pct+'% over the next 3 to 4 weeks before levelling off, peaking near '+fmt(fcData.peak)+' cases a week across the region.','','Supplies: '+stock.filter(function(x){return x.item.indexOf('ACT')===0||x.item.indexOf('Malaria')===0;}).filter(function(x){return x.days<=7;}).length+' northern facilities are out of, or close to running out of, ACTs or rapid tests.','','RECOMMENDED: pre-position ACTs and rapid tests now, and step up village health team case management.'].join('\n');}
+  if(/medicine|stock|suppl|drug|running out|vaccine/.test(s)){var o=stock.filter(function(x){return x.days===0;});return['MEDICINE STOCK-OUTS · EPI WEEK '+WK.w,'',o.length+' facilities are at zero stock:',''].concat(o.map(function(x){return'• '+x.facility+': '+x.item;})).concat(['','A further '+stock.filter(function(x){return x.days>0&&x.days<=7;}).length+' facilities have less than a week left. Most are in districts with active alerts, so resupply should follow the outbreak priorities.']).join('\n');}
+  var dz=D.slice(1).filter(function(x){return s.indexOf(x.id)>=0;})[0];
+  if(dz){var al=alerts.filter(function(a){return a.dz===dz;});var nat=national(dz.id);return[dz.name.toUpperCase()+' · NATIONAL PICTURE','','This week: '+fmt(nat[25])+' '+dz.unit+' nationally (last week '+fmt(nat[24])+').',al.length?'Unusual rises in: '+al.map(function(a){return a.d.name+' ('+fmt(a.a.cur)+')';}).join(', ')+'.':'No district is above its normal range.'].join('\n');}
+  return"I can answer questions about any district, a disease (malaria, cholera, measles, mpox, anthrax), the outlook for a region, or medicine stock-outs. For example: \"What's happening in Isingiro?\"";
+}
+var busy=false;
+function typeInto(node,text,done){if(reduce){node.textContent=text;done&&done();return;}var i=0;node.classList.add('typing');(function step(){i+=Math.max(2,Math.round(text.length/180));node.textContent=text.slice(0,i);$('#msgs').scrollTop=1e6;if(i<text.length)setTimeout(step,16);else{node.classList.remove('typing');done&&done();}})();}
+function askQ(q){
+  if(busy)return;busy=true;var m=$('#msgs');
+  m.appendChild(el('div',{class:'msg u'},q));
+  var a=el('div',{class:'msg a'});a.appendChild(el('span',{class:'lbl'},'HEALTH WATCH ANALYST'));var body=el('span');body.textContent='Analysing surveillance data…';a.appendChild(body);m.appendChild(a);m.scrollTop=1e6;
+  setTimeout(function(){typeInto(body,answer(q),function(){busy=false;});},reduce?0:700);
+}
+$('#askForm').addEventListener('submit',function(e){e.preventDefault();var v=$('#askIn').value.trim();if(!v)return;$('#askIn').value='';askQ(v);});
+
+/* ---------- situation report ---------- */
+function sitrep(){
+  var s=$('#sitrep');s.innerHTML='';
+  s.appendChild(el('div',{class:'stampx'},'DEMONSTRATION'));
+  var hd=el('div',{class:'hdr'}),l=el('div');l.appendChild(el('div',{class:'meta'},'REPUBLIC OF UGANDA · MINISTRY OF HEALTH'));l.appendChild(el('h2',null,'Weekly Situation Report'));
+  var r=el('div',{class:'meta'},'EPI WEEK '+WK.w+' · '+WK.y+'\nGenerated '+new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'})+'\nUganda Health Watch');r.style.whiteSpace='pre-line';r.style.textAlign='right';hd.appendChild(l);hd.appendChild(r);s.appendChild(hd);
+  var crit=alerts.filter(function(a){return a.sev==='critical';});
+  s.appendChild(el('h5',null,'1. SUMMARY'));
+  s.appendChild(el('p',null,alerts.length+' alerts are active across '+Object.keys(alerts.reduce(function(o,a){o[a.d.name]=1;return o;},{})).length+' districts this week. '+crit.length+' are critical: '+crit.map(function(a){return a.dz.name.toLowerCase()+' in '+a.d.name;}).join(' and ')+'. Malaria continues to rise in the Northern region in line with the seasonal forecast. '+stock.filter(function(x){return x.days===0;}).length+' health facilities report stock-outs of essential commodities.'));
+  s.appendChild(el('h5',null,'2. PRIORITY ALERTS'));
+  var t=el('table'),hr=el('tr');['District','Disease','This week','Normal','Severity'].forEach(function(x){hr.appendChild(el('th',null,x));});t.appendChild(hr);
+  alerts.forEach(function(a){var tr=el('tr');[a.d.name,a.dz.name,fmt(a.a.cur),a.a.exp<1?'0–1':fmt(a.a.exp),a.sev].forEach(function(x){tr.appendChild(el('td',null,x));});t.appendChild(tr);});s.appendChild(t);
+  s.appendChild(el('h5',null,'3. OUTLOOK'));
+  s.appendChild(el('p',null,'Northern region malaria cases are forecast to rise by about '+fcData.pct+'% over the next 3 to 4 weeks. Cholera in Kasese is likely to spread along trade routes toward Bundibugyo without rapid water and sanitation measures.'));
+  s.appendChild(el('h5',null,'4. DECISIONS REQUESTED'));
+  var ul=el('ul');['Approve deployment of rapid response teams to Kasese and Ibanda within 24 hours.','Authorise emergency release of ACTs, rapid tests, ORS and IV fluids from the national medical stores to the facilities listed in Health Watch.','Approve a measles ring vaccination campaign in Isingiro.','Request a One Health investigation of the anthrax signal in Ibanda with the Ministry of Agriculture.'].forEach(function(x){ul.appendChild(el('li',null,x));});s.appendChild(ul);
+  s.appendChild(el('p',{class:'meta',style:'margin-top:22px'},'All figures in this demonstration are simulated and do not describe the real situation in Uganda.'));
+  var acts=el('div',{class:'acts'}),pb=el('button',{type:'button'},'Print or save as PDF'),cb=el('button',{type:'button',class:'p'},'Close');
+  pb.addEventListener('click',function(){window.print();});cb.addEventListener('click',closeModal);acts.appendChild(pb);acts.appendChild(cb);s.appendChild(acts);
+  $('#modal').classList.add('on');cb.focus();
+}
+function closeModal(){$('#modal').classList.remove('on');$('#sitrepBtn').focus();}
+$('#sitrepBtn').addEventListener('click',sitrep);
+$('#modal').addEventListener('click',function(e){if(e.target.id==='modal')closeModal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('#modal').classList.contains('on'))closeModal();});
+
+/* ---------- navigation ---------- */
+var TITLES={overview:'National overview',warning:'Early warning',ask:'Ask Health Watch',supply:'Medicines & supplies'};
+function go(v){
+  $$('.view').forEach(function(s){s.classList.toggle('on',s.id==='v-'+v);});
+  $$('.nav button').forEach(function(b){if(b.dataset.v===v)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  var t=$('#vtitle');t.textContent=TITLES[v]+' ';t.appendChild(el('span',null,'· Ministry of Health'));
+  if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);
+  if(v==='warning')renderForecast();
+  if(v==='supply')renderSupply();
+  if(v==='ask'&&!$('#msgs').children.length){var a=el('div',{class:'msg a'});a.appendChild(el('span',{class:'lbl'},'HEALTH WATCH ANALYST'));a.appendChild(el('span',null,'Good day. I monitor weekly surveillance reports, laboratory results and medicine stocks across all districts. Ask me about any district, disease or supply problem.'));$('#msgs').appendChild(a);}
+  window.scrollTo(0,0);
+}
+$$('.nav button').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.v);});});
+
+/* ---------- boot ---------- */
+loadMap().catch(function(){
+  $('#mapLoading').textContent='DISTRICT MAP UNAVAILABLE · CHECK CONNECTION';
+}).then(function(){
+  if(!districts.length){['Kasese','Bundibugyo','Isingiro','Ibanda','Kampala','Wakiso','Lamwo','Kitgum','Agago','Pader','Amuru','Gulu','Nwoya','Arua','Mbale','Hoima','Moroto','Masaka','Jinja','Lira'].forEach(function(n,i){var d={name:n,cx:0,cy:0,path:document.createElementNS('http://www.w3.org/2000/svg','path'),region:['Western','Western','Western','Western','Central','Central','Northern','Northern','Northern','Northern','Northern','Northern','Northern','Northern','Eastern','Western','Eastern','Central','Eastern','Northern'][i]};districts.push(d);byName[n.toLowerCase()]=d;});}
+  buildStock();buildData();renderKpis();renderChips();paintMap();renderAlerts();renderTrend();renderAnoms();renderForecast();renderSupply();
+  var start=(location.hash||'#overview').slice(1);if(TITLES[start])go(start);
+});
+})();
+</script>
+</body>
+</html>
